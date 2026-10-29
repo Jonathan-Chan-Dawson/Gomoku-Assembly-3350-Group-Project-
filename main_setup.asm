@@ -54,5 +54,5 @@
  
  # Idea: You Can Flip the Board Sideways Multiple Times or Expand It In Different Directions
  
- # Idea: Lines Will Not Work
+ # Idea: Add Idea
  
