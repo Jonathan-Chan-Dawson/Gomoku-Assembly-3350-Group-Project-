@@ -40,7 +40,7 @@
  syscall
  
  # Win Functions
- simulat_win:
+ simulate_win:
  
  # Idea: AI says "Cash Me Outside" And Can 1v1 You With Never-Soft Quotes On Top
  
@@ -50,5 +50,9 @@
  
  # Idea: Rage Quit Button?
  
- # Idea: 
+ # Idea: The Rubric Is the Insturctions or Add A Tutorial
+ 
+ # Idea: You Can Flip the Board Sideways Multiple Times or Expand It In Different Directions
+ 
+ # Idea: Lines Will Not Work
  
