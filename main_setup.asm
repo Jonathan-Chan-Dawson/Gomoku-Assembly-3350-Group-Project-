@@ -31,6 +31,11 @@
  
  jal $ra
  
+ draw_horizontal_loop:
+ 
+ draw_vertical_loop:
+ 
+ 
  # Insert Piece Functions
  insert_piece:
  
@@ -42,9 +47,9 @@
  # Win Functions
  simulate_win:
  
- # Idea: AI says "Cash Me Outside" And Can 1v1 You With Never-Soft Quotes On Top
+ # Idea: An AI trash-talker that challenges players to 1v1's. Drops viral insults as quotes on top.
  
- # Idea: Add an Undo Button, More Themes
+ # Idea: Add an Undo Button. Plus Add a Dark Mode.
  
  # Idea: "Hard" Mode
  
@@ -54,5 +59,8 @@
  
  # Idea: You Can Flip the Board Sideways Multiple Times or Expand It In Different Directions
  
- # Idea: Add Idea
+ # Idea: Add More Themes Like Maybe a Dark Purple "Berry" and Then a Dark Blue "Ocean" and Yellow "Sunflower"
+ 
+ # More Ideas To Be Added By Graydom Isom
+ 
  
