@@ -28,7 +28,7 @@
  
  # Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color.
  draw_grid:
- 
+ li $t0, 0 #t0 is rows
  jal $ra
  
  draw_horizontal_loop:
@@ -59,7 +59,7 @@
  
  # Idea: You Can Flip the Board Sideways Multiple Times or Expand It In Different Directions
  
- # Idea: Add More Themes Like Maybe a Dark Purple "Berry" and Then a Dark Blue "Ocean" and Yellow "Sunflower"
+ # Idea: Dark Mode
  
  # More Ideas To Be Added By Graydom Isom
  
