@@ -77,7 +77,23 @@
   addi $s2, $s2, 1 # row += 1
  
  check_left:
+  li $t3, 'a'
+  bne $t2, $t3, check_right
+  lw $t4, $zero
+  ble $s2, $t4, jump_to_keyboard
+  addi $s1, $s1, -1 # column -= 1
  check_right:
+  li $t3, 'd'
+  bne $t2, $t3, check_space
+  lw $t4, GRID_ROWS
+  bge $s2, $t4, jump_to_keyboard
+  addi $s1, $s1, 1 # column += 1
+  
+ check_space: #Move to Insert Piece
+  li $t3, ' '
+  bne $t2, $t3, jump_to_keyboard
+  j insert_piece #s1 is col, s2 is row
+  
  
  update_grid: # Updates Pointer For Grid
   
