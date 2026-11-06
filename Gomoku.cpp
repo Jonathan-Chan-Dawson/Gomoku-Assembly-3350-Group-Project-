@@ -1,3 +1,6 @@
-// Starting the Gomoku Port
+#include <iostream>
 
-// Edit to test accounts.
+int main() {
+	std::cout << "Hello, world!" << std::endl;
+	return 0;
+}
