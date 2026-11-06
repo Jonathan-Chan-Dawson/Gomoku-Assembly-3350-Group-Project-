@@ -6,6 +6,8 @@
 
 # Notes: Use t For Temporary, a For Into-Functions, v for outputted or
  .data
+ BOARD_START: .word 0x10040000 # start in top left corner
+ BOARD_COLOR: .word 0xFF87633A # Dark brown board color
  imageBuffer: .space 0x80000 # allocate space for 512 x 256 x 4 (each pixel is stored with a word)
  
  # Grid
@@ -13,8 +15,6 @@
  GRID_Y: .word 50 # Start Y
  GRID_ROWS: .word 15 # Number Rows. Note: Space Lines 8 Pixels Between
  GRID_COLUMNS: .word 15 # Number Columns. Note: Each Pixel is 8 In Between, Space Lines 8 Pixels Between
-  
- GRID_COLOR: .word 0x000000AA # First Four Characters Are Filler Reminder
   
  # Pieces
  PIECE_COLOR_P1: .word 0x00FFFFFF # White Piece For Player 1
@@ -37,21 +37,47 @@
  lw $s1, player_col
  lw $s2, player_row
  
+ jal drawBoard
+ 
  li $v0, 10
  syscall
  
- # Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color.
- draw_grid:
- li $t0, 0 #t0 is rows
- #draw horizontal GRID_ROWS = 15
- #draw vertical GRID_COLUMNS = 15
- 
- jal $ra
- 
- draw_horizontal_loop:
- 
- draw_vertical_loop:
- 
+# DRAW BOARD ------------------------------------------------------------ 
+# Fill 512x512 Bitmap display with brown
+# Unit width x height is 2 x 2
+# DRAW BOARD ------------------------------------------------------------
+
+ drawBoard:
+   li $t1, 0 # y=0
+   lw  $t4, boardColor
+   
+   drawRow:
+     bge $t1, 256, drawExit # y
+     
+     # row address = boardStart + row*512
+     lw $t0, boardStart
+     sll $t3, $t1, 10 # y * 512 in t3
+     add $t0, $t0, $t3 # row starting address
+     
+     li $t2, 0 # x = 0
+     
+     drawCol:
+       bge $t2, 256, nextRow # x > 300 then go to nextRow
+       
+       # Paint pixel
+       sw  $t4, 0($t0)
+       
+       addi $t2, $t2, 1 # x+=1
+       addi $t0, $t0, 4 # current pixel
+       
+       j drawCol
+     
+     nextRow:
+       addi $t1, $t1, 1
+       j drawRow
+   
+   drawExit:
+     jr $ra
  
  # Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
  wait_for_keyboard: # Loop Constatnly Checking For Inputs Of WASD Keys. When Insert (Space), Inset Piece At That Location
