@@ -6,8 +6,6 @@
 
 # Notes: Use t For Temporary, a For Into-Functions, v for outputted or
  .data
- BOARD_START: .word 0x10040000 # start in top left corner
- BOARD_COLOR: .word 0xFF87633A # Dark brown board color
  imageBuffer: .space 0x80000 # allocate space for 512 x 256 x 4 (each pixel is stored with a word)
  
  # Grid
@@ -15,6 +13,10 @@
  GRID_Y: .word 50 # Start Y
  GRID_ROWS: .word 15 # Number Rows. Note: Space Lines 8 Pixels Between
  GRID_COLUMNS: .word 15 # Number Columns. Note: Each Pixel is 8 In Between, Space Lines 8 Pixels Between
+  
+ GRID_COLOR: .word 0x000000AA # First Four Characters Are Filler Reminder
+ boardStart: .word 0x10040000 # start in top left corner
+ boardColor: .word 0xFF87633A # Dark brown board color
   
  # Pieces
  PIECE_COLOR_P1: .word 0x00FFFFFF # White Piece For Player 1
@@ -37,54 +39,60 @@
  lw $s1, player_col
  lw $s2, player_row
  
- jal drawBoard
+ j drawBoard
+ 
  
  li $v0, 10
  syscall
  
-# DRAW BOARD ------------------------------------------------------------ 
+# Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color. # DRAW BOARD ------------------------------------------------------------ 
 # Fill 512x512 Bitmap display with brown
 # Unit width x height is 2 x 2
 # DRAW BOARD ------------------------------------------------------------
+# DRAW BOARD ------------------------------------------------------------ 
+# Fill a 15x15 Gomoku board starting from 0,0
+# 50x50 pixel diff in grid space
 
  drawBoard:
    li $t1, 0 # y=0
    lw  $t4, boardColor
-   
+ 
    drawRow:
      bge $t1, 256, drawExit # y
      
-     # row address = boardStart + row*512
+     # row address = boardStart + row * 512
      lw $t0, boardStart
      sll $t3, $t1, 10 # y * 512 in t3
      add $t0, $t0, $t3 # row starting address
      
      li $t2, 0 # x = 0
      
-     drawCol:
-       bge $t2, 256, nextRow # x > 300 then go to nextRow
+   drawCol:
+     bge $t2, 256, nextRow # x > 300 then go to nextRow
        
-       # Paint pixel
-       sw  $t4, 0($t0)
+     # Paint pixel
+     sw  $t4, 0($t0)
        
-       addi $t2, $t2, 1 # x+=1
-       addi $t0, $t0, 4 # current pixel
+     addi $t2, $t2, 1 # x+=1
+     addi $t0, $t0, 4 # current pixel
        
-       j drawCol
+     j drawCol
      
-     nextRow:
-       addi $t1, $t1, 1
-       j drawRow
+    nextRow:
+     addi $t1, $t1, 1
+     j drawRow
    
-   drawExit:
-     jr $ra
+  drawExit:
+    jr $ra
+     
+ 
  
  # Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
  wait_for_keyboard: # Loop Constatnly Checking For Inputs Of WASD Keys. When Insert (Space), Inset Piece At That Location
  lui $t0, 0xFFFF # Base MMIO Address
  lw $t1, 0($t0) # Loads Control
  andi $t1, $t1, 1 # Checks If Bit Is Ready
- beq $t1, zero, wait_for_keyboard
+ beq $t1, $zero, wait_for_keyboard
  
  lw $t2, 4($t0) # Loads Keyboard Address
  
@@ -105,9 +113,9 @@
  check_left:
   li $t3, 'a'
   bne $t2, $t3, check_right
-  lw $t4, $zero
-  ble $s2, $t4, jump_to_keyboard
+  ble $s2, $zero, jump_to_keyboard
   addi $s1, $s1, -1 # column -= 1
+  
  check_right:
   li $t3, 'd'
   bne $t2, $t3, check_space
@@ -122,12 +130,18 @@
   
  
  update_grid: # Updates Pointer For Grid
+  # Update Grid
+  # Jump to Keyboard
   
   j jump_to_keyboard
   
  insert_piece: # Inserts Piece
  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
  # Start The Piece On the Top Right
+ li $t0, 0 #base
+ lw $t1, GRID_ROW
+ mult $t2, $s2, $t1
+ mult $t2, $t2, 4
  
  check_win: # Check For Win. Check Vertical, Horizontal, Right-Left Diagonals, and Left-Right Diagonals
  
