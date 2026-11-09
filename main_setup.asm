@@ -7,7 +7,8 @@
 # Notes: Use t For Temporary, a For Into-Functions, v for outputted or
  .data
  BOARD_START: .word 0x10040000 # start in top left corner
- BOARD_COLOR: .word 0xFF87633A # Dark brown board color
+ BOARD_COLOR: .word 0x00E8D3A8 # Dark brown board color
+ LINE_COLOR: .word 0x004A3B2A # light tan
  imageBuffer: .space 0x80000 # allocate space for 512 x 256 x 4 (each pixel is stored with a word)
  
  # Grid
@@ -45,37 +46,66 @@
 # DRAW BOARD ------------------------------------------------------------ 
 # Fill 512x512 Bitmap display with brown
 # Unit width x height is 2 x 2
+# Start is at 0x10040000 on the heap
 # DRAW BOARD ------------------------------------------------------------
 
  drawBoard:
-   li $t1, 0 # y=0
-   lw  $t4, boardColor
-   
+   lw $t4, BOARD_COLOR       # background color
+   lw $t7, LINE_COLOR        # grid line color
+   li $t1, 0                 # y = 0
+
    drawRow:
-     bge $t1, 256, drawExit # y
+     bge $t1, 256, drawExit
+
+     lw $t0, BOARD_START
+     sll $t3, $t1, 10        # y * 1024 bytes per row
+     add $t0, $t0, $t3       # row starting address
+
+     # Per-row flags, computed once per row instead of once per pixel
+     li $t8, 0               # $t8 = 1 if this row is a horizontal line
+     li $t9, 0               # $t9 = 1 if this row is inside the grid's y range
      
-     # row address = boardStart + row*512
-     lw $t0, boardStart
-     sll $t3, $t1, 10 # y * 512 in t3
-     add $t0, $t0, $t3 # row starting address
+     # early exit
+     blt $t1, 22, rowFlagsDone # y < 22 outside grid range
+     bgt $t1, 232, rowFlagsDone # y > 232 outside grid range
      
-     li $t2, 0 # x = 0
+     li $t9, 1
+     addi $t5, $t1, -22
+     rem  $t6, $t5, 15
+     seq  $t8, $t6, 0        # 1 if (y-22) % 15 == 0
      
+   rowFlagsDone:
+
+     li $t2, 0               # x = 0
+
      drawCol:
-       bge $t2, 256, nextRow # x > 300 then go to nextRow
+       bge $t2, 256, nextRow
        
-       # Paint pixel
-       sw  $t4, 0($t0)
+       # not a grid line
+       move $t3, $t4         # brown
+       beq $t9, $zero, paint       # paint brown if outside of range
+       blt $t2, 22, paint    # x < 22 --> paint brown
+       bgt $t2, 232, paint   # x > 232 --> paint brown
        
-       addi $t2, $t2, 1 # x+=1
-       addi $t0, $t0, 4 # current pixel
-       
+       # grid line
+       bne $t8, $zero, useLine     # horizontal line row -> line color
+       addi $t5, $t2, -22
+       rem  $t6, $t5, 15
+       bne $t6, $zero, paint       # if x - 22 % 15 == 0 then grid line
+     useLine:
+       move $t3, $t7         # line color
+
+     paint:
+       sw  $t3, 0($t0)
+
+       addi $t2, $t2, 1
+       addi $t0, $t0, 4
        j drawCol
-     
+
      nextRow:
        addi $t1, $t1, 1
        j drawRow
-   
+
    drawExit:
      jr $ra
  
