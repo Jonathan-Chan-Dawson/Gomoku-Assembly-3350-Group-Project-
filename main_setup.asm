@@ -19,8 +19,8 @@
  boardColor: .word 0xFF87633A # Dark brown board color
   
  # Pieces
- PIECE_COLOR_P1: .word 0x00FFFFFF # White Piece For Player 1
- PIECE_COLOR_P2: .word 0x00000000 # Black Piece For Player 2
+ PIECE_COLOR_P1: .word 0x00FFA500 # Orange Piece For Player 1
+ PIECE_COLOR_P2: .word 0x00000080 # Navy Blue Piece For Player 2
   
  # Array
  .align 2 # Used Since Last Element Was Word
@@ -35,57 +35,66 @@
  .globl main
  
  main: 
- lw $s0, current_player
- lw $s1, player_col
- lw $s2, player_row
+
+ # GET THE S VALUES
+  lw $s0, current_player
+  lw $s1, player_col
+  lw $s2, player_row
  
- j drawBoard
+  li $s3, 0x00000000 # Unknown Color
+  la $s4, GOMOKU_GRID # The 15 * 15 array. 0 = no piece, 1 = P1, 2 = P2
  
+  jal drawBoard
+  j wait_for_keyboard
+
  
- li $v0, 10
- syscall
- 
-# Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color. # DRAW BOARD ------------------------------------------------------------ 
+# Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color. 
+# DRAW BOARD ------------------------------------------------------------ 
 # Fill 512x512 Bitmap display with brown
 # Unit width x height is 2 x 2
 # DRAW BOARD ------------------------------------------------------------
-# DRAW BOARD ------------------------------------------------------------ 
 # Fill a 15x15 Gomoku board starting from 0,0
 # 50x50 pixel diff in grid space
 
  drawBoard:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    li $t1, 0 # y=0
    lw  $t4, boardColor
+=======
+  li $t1, 0 # y=0
+  lw  $t4, boardColor
+>>>>>>> Stashed changes
  
-   drawRow:
-     bge $t1, 256, drawExit # y
+  drawRow:
+   bge $t1, 256, drawExit # y
      
-     # row address = boardStart + row * 512
-     lw $t0, boardStart
-     sll $t3, $t1, 10 # y * 512 in t3
-     add $t0, $t0, $t3 # row starting address
+   # row address = boardStart + row * 512
+   lw $t0, boardStart
+   sll $t3, $t1, 10 # y * 512 in t3
+   add $t0, $t0, $t3 # row starting address
      
-     li $t2, 0 # x = 0
+   li $t2, 0 # x = 0
      
-   drawCol:
-     bge $t2, 256, nextRow # x > 300 then go to nextRow
+  drawCol:
+   bge $t2, 256, nextRow # x > 300 then go to nextRow
        
-     # Paint pixel
-     sw  $t4, 0($t0)
+   # Paint pixel
+   sw $t4, 0($t0)
        
-     addi $t2, $t2, 1 # x+=1
-     addi $t0, $t0, 4 # current pixel
+   addi $t2, $t2, 1 # x+=1
+   addi $t0, $t0, 4 # current pixel
        
-     j drawCol
+   j drawCol
      
-    nextRow:
-     addi $t1, $t1, 1
-     j drawRow
+  nextRow:
+   addi $t1, $t1, 1
+   j drawRow
    
   drawExit:
-    jr $ra
+   jr $ra
      
+<<<<<<< Updated upstream
 =======
   li $t1, 0 # y=0
   lw $t4, boardColor
@@ -118,6 +127,8 @@
   drawExit:
    jr $ra
      
+=======
+>>>>>>> Stashed changes
  # UPDATE GRID AND GET COLOR: Checks The Grid and Then the Color For Because What's Inside the Actual Grid
  update_grid: 
   # Updates Pointer For Grid # Update Grid ~ s3 is the last color
@@ -125,17 +136,36 @@
   sw $t5, 0($t0) 
   # Jump to Keyboard
   j jump_to_keyboard
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
  
+ get_tile_color: # Gets the Tile's Color To the s3 Avenger
+  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
+  # Start The Piece On the Top Right
+  lw $t0, $s1 #base = number or rows
+  lw $t1, GRID_COLUMNS #number of columns
+  mult $t2, $s2, $t1 #t2 = row * column #
+  addi $t3, $t1, $t2 #t3 = sum
+  
+  sll $t4, $t3, 2 #Shift 2 literals
+  add $t4, $s4, $t4
  
- # Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
+ set_color_board:
+ 
+  sw $s4, 0($s4)
+  
+ 
+ # Game Loop + Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
  wait_for_keyboard: # Loop Constatnly Checking For Inputs Of WASD Keys. When Insert (Space), Inset Piece At That Location
- lui $t0, 0xFFFF # Base MMIO Address
- lw $t1, 0($t0) # Loads Control
- andi $t1, $t1, 1 # Checks If Bit Is Ready
- beq $t1, $zero, wait_for_keyboard
+  
+  lui $t0, 0xFFFF # Base MMIO Address
+  lw $t1, 0($t0) # Loads Control
+  andi $t1, $t1, 1 # Checks If Bit Is Ready
+  beq $t1, $zero, wait_for_keyboard
  
- lw $t2, 4($t0) # Loads Keyboard Address
+  lw $t2, 4($t0) # Loads Keyboard Address
  
  check_up: #Check Up Key
   li $t3, 'w'
@@ -150,12 +180,14 @@
   lw $t4, GRID_COLUMNS
   bge $s2, $t4, jump_to_keyboard
   addi $s2, $s2, 1 # row += 1
+  j update_grid
  
  check_left:
   li $t3, 'a'
   bne $t2, $t3, check_right
   ble $s2, $zero, jump_to_keyboard
   addi $s1, $s1, -1 # column -= 1
+  j update_grid
   
  check_right:
   li $t3, 'd'
@@ -163,26 +195,20 @@
   lw $t4, GRID_ROWS
   bge $s2, $t4, jump_to_keyboard
   addi $s1, $s1, 1 # column += 1
+  j update_grid
   
- check_space: #Move to Insert Piece
+ check_space: # Move to Insert Piece
   li $t3, ' '
   bne $t2, $t3, jump_to_keyboard
-  j insert_piece #s1 is col, s2 is row
-  
+  j insert_piece #s1 is col, s2 is row 
  
- update_grid: # Updates Pointer For Grid
-  # Update Grid
-  # Jump to Keyboard
-  
-  j jump_to_keyboard
-  
  insert_piece: # Inserts Piece
- # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
- # Start The Piece On the Top Right
- li $t0, 0 #base
- lw $t1, GRID_ROW
- mult $t2, $s2, $t1
- mult $t2, $t2, 4
+  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
+  # Start The Piece On the Top Right
+  li $t0, 0 #base
+  lw $t1, GRID_ROW
+  mult $t2, $s2, $t1
+  mult $t2, $t2, 4
  
  check_win: # Check For Win. Check Vertical, Horizontal, Right-Left Diagonals, and Left-Right Diagonals
  
@@ -211,9 +237,12 @@
  # Restart Function
  func_restart_board: # Clears the Board and Restarts
  
- # Idea: Use "On Claude" AI. Sends quotes
  
- # Idea: Add an Undo Button. Plus Add a Dark Mode.
+ end_program: 
+  li $v0, 10
+  syscall
+  
+ # Idea: Use "On Claude" AI. Sends quotes
  
  # Idea: "Hard" Mode
  
