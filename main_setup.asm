@@ -88,7 +88,7 @@
        bge $t2, 256, nextRow
        
        # not a grid line
-       move $t3, $t4         # brown
+       move $t3, $t4       
        beq $t9, $zero, paintBoard       # paint brown if outside of range
        blt $t2, 22, paintBoard    # x < 22 --> paint brown
        bgt $t2, 232, paintBoard   # x > 232 --> paint brown
