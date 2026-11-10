@@ -44,7 +44,7 @@
   la $s4, GOMOKU_GRID # The 15 * 15 array. 0 = no piece, 1 = P1, 2 = P2
  
   jal drawBoard
-  j wait_for_keyboard
+  j game_loop
 
  
 # Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color. 
@@ -121,54 +121,21 @@
  # Value = 2: P2 (navy)
  update_board:
   li $a0, 0 # Start Column
-  li $a1, 0 # End Column
+  li $a1, 0 # Start Row
   
   check_row_loop:
    # start of loop
    lw $t0, GRID_ROWS
    lw $t1, GRID_COLUMNS
-   
-   lw $t2, PIECE_COLOR_P1
-   lw $t3, PIECE_COLOR_P2
-   
+
    bge $a0, $t0, next_row
    addi $a0, $a0, 1
    
-   jal get_tile_number #a0 is x, a1 is y, s3 = tile number
+   jal update_board_at_pos
    
-   # switch to the function: paint or skip?
-   li $t4, 0
-   li $t5, 1
-   li $t6, 2
-   beq $s3, $t4, skip_update
-   beq $s3, $t5, update_color_p1
-   beq $s3, $t6, update_color_p2
-   
-   j skip_update #Fall Back
-   
-   # update board functions
-   
-   update_color_p1: #orange
-    move $t7, $t2
-    j paint
-    
-   update_color_p2: #navy
-    move $t7, $t3
-    j paint
-    
-   skip_update: #color it back to the grid or skip
-    j check_row_loop
-   
-   paint:
-    # Get s3, The Tile Number
-    # Or Get t0 and t1, Confident Those are X's and Y's
-    sw  $t4, 0($s3) # Then Paint. $t7 is Now Famous.
-   
-    j check_row_loop
-    
    next_row:
     bge $a0, $t1, end_update_board
-    addi $a0, $a1, 1
+    addi $a1, $a1, 1
     j check_row_loop
  
  end_update_board:
@@ -177,7 +144,7 @@
  get_tile_number: # Gets the Tile's Color Number From $a0 column # and $a1 row #
   # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
   # Start The Piece On the Top Right
-  move $t0, $s1 #base $t0= number or rows
+  move $t0, $s1 #base $t0 = number or rows
   lw $t1, GRID_COLUMNS #t1 = number of columns
   mult $t1, $s2 #t1 *= row #
   addi $t2, $t0, $t1 #t2 = total sum
@@ -185,12 +152,53 @@
   sll $t2, $t2, 2 #Shift 2 literals
   lw $s3, 0($s2)
   jal $ra
-
- 
- # Draw The Piece After Updating Board
- update_piece:
+  
+ # Update Board At Pos
+ update_board_at_pos: #$a0 is column, $a1 is row
+  # start of loop
+  lw $t0, PIECE_COLOR_P1
+  lw $t1, PIECE_COLOR_P2
+   
+  jal get_tile_number #a0 is x, a1 is y, s3 = tile number
+   
+  # switch to the function: paint or skip?
+  li $t2, 0
+  li $t3, 1
+  li $t4, 2
+  beq $s3, $t2, skip_update
+  beq $s3, $t3, update_color_p1
+  beq $s3, $t4, update_color_p2
+  
+  j skip_update # Fall Back
+   
+  # update board functions
+   
+  update_color_p1: #orange
+   move $t5, $t2
+   j paint_piece
+  
+  update_color_p2: #navy
+   move $t5, $t3
+   j paint_piece
+  
+  skip_update: # color it back to the grid or skip
+   j end_update
+  
+  paint_piece: # piece is painted
+   # paint the pieces here: $a0 and $a1 are row, column
+   # shape tba 
+   
+  
+  end_update:
+   jal $ra
+   
+  # Draw The Pointer Piece After Updating Board
+ update_piece_pointer:
   sw $s4, 0($s4)
   
+ 
+ paint_piece:
+  jal $ra
  
  
  
@@ -265,8 +273,8 @@
  check_win: # Check For Win. Check Vertical, Horizontal, Right-Left Diagonals, and Left-Right Diagonals
  
  switch_players: # Switch Players After Check Win, Then End Turn
- li $t0, 1 
- bne $s0, $t0 #If Player is not 1, Switch To P2, Else Switch To P1
+  li $t0, 1 
+  bne $s0, $t0 #If Player is not 1, Switch To P2, Else Switch To P1
  
  set_to_p1:
  #li $s0, 1
