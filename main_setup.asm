@@ -54,6 +54,7 @@
 # 50x50 pixel diff in grid space
 
  drawBoard:
+<<<<<<< Updated upstream
    li $t1, 0 # y=0
    lw  $t4, boardColor
  
@@ -85,6 +86,46 @@
   drawExit:
     jr $ra
      
+=======
+  li $t1, 0 # y=0
+  lw $t4, boardColor
+ 
+  drawRow:
+   bge $t1, 256, drawExit # y
+     
+   # row address = boardStart + row * 512
+   lw $t0, boardStart
+   sll $t3, $t1, 10 # y * 512 in t3
+   add $t0, $t0, $t3 # row starting address
+     
+   li $t2, 0 # x = 0
+     
+  drawCol:
+   bge $t2, 256, nextRow # x > 300 then go to nextRow
+       
+   # Paint pixel
+   sw $t4, 0($t0)
+       
+   addi $t2, $t2, 1 # x+=1
+   addi $t0, $t0, 4 # current pixel
+       
+   j drawCol
+     
+  nextRow:
+   addi $t1, $t1, 1
+   j drawRow
+   
+  drawExit:
+   jr $ra
+     
+ # UPDATE GRID AND GET COLOR: Checks The Grid and Then the Color For Because What's Inside the Actual Grid
+ update_grid: 
+  # Updates Pointer For Grid # Update Grid ~ s3 is the last color
+  jal get_tile_color
+  sw $t5, 0($t0) 
+  # Jump to Keyboard
+  j jump_to_keyboard
+>>>>>>> Stashed changes
  
  
  # Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
