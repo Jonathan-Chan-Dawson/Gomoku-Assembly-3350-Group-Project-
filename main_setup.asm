@@ -1,5 +1,5 @@
 # Main Setup For Gomoku
-# Team Members: Jonathan Dawson, Bejamin Bruns, Graydon Isom, Caleb Lewis
+# Team Members: Jonathan Dawson, Benjamin Bruns, Graydon Isom, Caleb Lewis
 # Step 1: Make the Background and the Grid
 # Step 2: Have Player Be Player 1. Place a Piece in the 
 # Step 3: Use Move_Loop and li and move to continue moving and implementing
