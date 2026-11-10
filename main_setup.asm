@@ -1,4 +1,4 @@
-# Main Setup For Connect Four
+# Main Setup For Gomoku
 # Team Members: Jonathan Dawson, Bejamin Bruns, Graydon Isom, Caleb Lewis
 # Step 1: Make the Background and the Grid
 # Step 2: Have Player Be Player 1. Place a Piece in the 
@@ -6,6 +6,12 @@
 
 # Notes: Use t For Temporary, a For Into-Functions, v for outputted or
  .data
+<<<<<<< HEAD
+=======
+ BOARD_START: .word 0x10040000 # start in top left corner
+ BOARD_COLOR: .word 0x00E8D3A8 # Dark brown board color
+ LINE_COLOR: .word 0x004A3B2A # light tan
+>>>>>>> drawBoard
  imageBuffer: .space 0x80000 # allocate space for 512 x 256 x 4 (each pixel is stored with a word)
  
  # Grid
@@ -52,11 +58,13 @@
 # DRAW BOARD ------------------------------------------------------------ 
 # Fill 512x512 Bitmap display with brown
 # Unit width x height is 2 x 2
+# Start is at 0x10040000 on the heap
 # DRAW BOARD ------------------------------------------------------------
 # Fill a 15x15 Gomoku board starting from 0,0
 # 50x50 pixel diff in grid space
 
  drawBoard:
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
    li $t1, 0 # y=0
@@ -147,10 +155,78 @@
   lw $t0, $s1 #base = number or rows
   lw $t1, GRID_COLUMNS #number of columns
   mult $t2, $s2, $t1 #t2 = row * column #
+=======
+   lw $t4, BOARD_COLOR       # background color
+   lw $t7, LINE_COLOR        # grid line color
+   li $t1, 0                 # y = 0
+
+   drawRow:
+     bge $t1, 256, drawExit
+
+     lw $t0, BOARD_START
+     sll $t3, $t1, 10        # y * 1024 bytes per row
+     add $t0, $t0, $t3       # row starting address
+
+     # Per-row flags, computed once per row instead of once per pixel
+     li $t8, 0               # $t8 = 1 if this row is a horizontal line
+     li $t9, 0               # $t9 = 1 if this row is inside the grid's y range
+     
+     # early exit
+     blt $t1, 22, rowFlagsDone # y < 22 outside grid range
+     bgt $t1, 232, rowFlagsDone # y > 232 outside grid range
+     
+     li $t9, 1
+     addi $t5, $t1, -22
+     rem  $t6, $t5, 15
+     seq  $t8, $t6, 0        # 1 if (y-22) % 15 == 0
+     
+   rowFlagsDone:
+
+     li $t2, 0               # x = 0
+
+     drawCol:
+       bge $t2, 256, nextRow
+       
+       # not a grid line
+       move $t3, $t4         # brown
+       beq $t9, $zero, paint       # paint brown if outside of range
+       blt $t2, 22, paint    # x < 22 --> paint brown
+       bgt $t2, 232, paint   # x > 232 --> paint brown
+       
+       # grid line
+       bne $t8, $zero, useLine     # horizontal line row -> line color
+       addi $t5, $t2, -22
+       rem  $t6, $t5, 15
+       bne $t6, $zero, paint       # if x - 22 % 15 == 0 then grid line
+     useLine:
+       move $t3, $t7         # line color
+
+     paint:
+       sw  $t3, 0($t0)
+
+       addi $t2, $t2, 1
+       addi $t0, $t0, 4
+       j drawCol
+
+     nextRow:
+       addi $t1, $t1, 1
+       j drawRow
+
+   drawExit:
+     jr $ra
+ 
+ get_tile_color: # Gets the Tile's Color To the s3 Avenger
+  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
+  # Start The Piece On the Top Right
+  move $t0, $s1 #base $t0= number or rows
+  lw $t1, GRID_COLUMNS #t1 = number of columns
+  mult $t1, $s2 #t1 *= row #
+>>>>>>> drawBoard
   addi $t3, $t1, $t2 #t3 = sum
   
   sll $t4, $t3, 2 #Shift 2 literals
   add $t4, $s4, $t4
+<<<<<<< HEAD
  
  set_color_board:
  
@@ -165,6 +241,21 @@
   andi $t1, $t1, 1 # Checks If Bit Is Ready
   beq $t1, $zero, wait_for_keyboard
  
+=======
+ 
+ set_color_board:
+  sw $s4, 0($s4)
+  
+ 
+ # Game Loop + Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
+ wait_for_keyboard: # Loop Constatnly Checking For Inputs Of WASD Keys. When Insert (Space), Inset Piece At That Location
+  
+  lui $t0, 0xFFFF # Base MMIO Address
+  lw $t1, 0($t0) # Loads Control
+  andi $t1, $t1, 1 # Checks If Bit Is Ready
+  beq $t1, $zero, wait_for_keyboard
+ 
+>>>>>>> drawBoard
   lw $t2, 4($t0) # Loads Keyboard Address
  
  check_up: #Check Up Key
