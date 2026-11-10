@@ -89,19 +89,19 @@
        
        # not a grid line
        move $t3, $t4         # brown
-       beq $t9, $zero, paint       # paint brown if outside of range
-       blt $t2, 22, paint    # x < 22 --> paint brown
-       bgt $t2, 232, paint   # x > 232 --> paint brown
+       beq $t9, $zero, paintBoard       # paint brown if outside of range
+       blt $t2, 22, paintBoard   # x < 22 --> paint brown
+       bgt $t2, 232, paintBoard   # x > 232 --> paint brown
        
        # grid line
        bne $t8, $zero, useLine     # horizontal line row -> line color
        addi $t5, $t2, -22
        rem  $t6, $t5, 15
-       bne $t6, $zero, paint       # if x - 22 % 15 == 0 then grid line
+       bne $t6, $zero, paintBoard      # if x - 22 % 15 == 0 then grid line
      useLine:
        move $t3, $t7         # line color
 
-     paint:
+     paintBoard:
        sw  $t3, 0($t0)
 
        addi $t2, $t2, 1
@@ -290,7 +290,16 @@
  simulate_win: # When Won, Will Show Text You Won In Bottom, and Cannot Place More Pieces.
  
  # Restart Function
- func_restart_game: # Clears the Board and Restarts
+ func_restart_game: 
+  li $t0, 0
+  move $t1, $s4
+  clear_loop:
+  bge $t0, 225, clear_done
+  sw $zero, 0($t1)
+  addi $t0, $t0, 1
+  addi $t1, $t1, 4
+  j clear_loop
+  clear_done:
   j main
  
  
@@ -300,9 +309,7 @@
   
  # Idea: Use "On Claude" AI. Sends quotes
  
- # Idea: "Hard" Mode
  
- # Idea: Rage Quit Button?
  
  # Idea: The Rubric Is the Instructions or Add A Tutorial
  
