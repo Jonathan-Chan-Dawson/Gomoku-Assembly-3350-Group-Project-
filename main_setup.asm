@@ -6,12 +6,9 @@
 
 # Notes: Use t For Temporary, a For Into-Functions, v for outputted or
  .data
-<<<<<<< HEAD
-=======
  BOARD_START: .word 0x10040000 # start in top left corner
  BOARD_COLOR: .word 0x00E8D3A8 # Dark brown board color
  LINE_COLOR: .word 0x004A3B2A # light tan
->>>>>>> drawBoard
  imageBuffer: .space 0x80000 # allocate space for 512 x 256 x 4 (each pixel is stored with a word)
  
  # Grid
@@ -19,10 +16,6 @@
  GRID_Y: .word 50 # Start Y
  GRID_ROWS: .word 15 # Number Rows. Note: Space Lines 8 Pixels Between
  GRID_COLUMNS: .word 15 # Number Columns. Note: Each Pixel is 8 In Between, Space Lines 8 Pixels Between
-  
- GRID_COLOR: .word 0x000000AA # First Four Characters Are Filler Reminder
- boardStart: .word 0x10040000 # start in top left corner
- boardColor: .word 0xFF87633A # Dark brown board color
   
  # Pieces
  PIECE_COLOR_P1: .word 0x00FFA500 # Orange Piece For Player 1
@@ -34,8 +27,8 @@
   
  # Variables
  current_player: .word 1
- player_col: .word 7 # Middle
- player_row: .word 7 # Middle
+ player_col_start: .word 7 # Middle
+ player_row_start: .word 7 # Middle
   
  .text
  .globl main
@@ -44,10 +37,10 @@
 
  # GET THE S VALUES
   lw $s0, current_player
-  lw $s1, player_col
-  lw $s2, player_row
+  lw $s1, player_col_start
+  lw $s2, player_row_start
  
-  li $s3, 0x00000000 # Unknown Color
+  li $s3, 0 # Unknown Tile Number
   la $s4, GOMOKU_GRID # The 15 * 15 array. 0 = no piece, 1 = P1, 2 = P2
  
   jal drawBoard
@@ -64,98 +57,6 @@
 # 50x50 pixel diff in grid space
 
  drawBoard:
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-   li $t1, 0 # y=0
-   lw  $t4, boardColor
-=======
-  li $t1, 0 # y=0
-  lw  $t4, boardColor
->>>>>>> Stashed changes
- 
-  drawRow:
-   bge $t1, 256, drawExit # y
-     
-   # row address = boardStart + row * 512
-   lw $t0, boardStart
-   sll $t3, $t1, 10 # y * 512 in t3
-   add $t0, $t0, $t3 # row starting address
-     
-   li $t2, 0 # x = 0
-     
-  drawCol:
-   bge $t2, 256, nextRow # x > 300 then go to nextRow
-       
-   # Paint pixel
-   sw $t4, 0($t0)
-       
-   addi $t2, $t2, 1 # x+=1
-   addi $t0, $t0, 4 # current pixel
-       
-   j drawCol
-     
-  nextRow:
-   addi $t1, $t1, 1
-   j drawRow
-   
-  drawExit:
-   jr $ra
-     
-<<<<<<< Updated upstream
-=======
-  li $t1, 0 # y=0
-  lw $t4, boardColor
- 
-  drawRow:
-   bge $t1, 256, drawExit # y
-     
-   # row address = boardStart + row * 512
-   lw $t0, boardStart
-   sll $t3, $t1, 10 # y * 512 in t3
-   add $t0, $t0, $t3 # row starting address
-     
-   li $t2, 0 # x = 0
-     
-  drawCol:
-   bge $t2, 256, nextRow # x > 300 then go to nextRow
-       
-   # Paint pixel
-   sw $t4, 0($t0)
-       
-   addi $t2, $t2, 1 # x+=1
-   addi $t0, $t0, 4 # current pixel
-       
-   j drawCol
-     
-  nextRow:
-   addi $t1, $t1, 1
-   j drawRow
-   
-  drawExit:
-   jr $ra
-     
-=======
->>>>>>> Stashed changes
- # UPDATE GRID AND GET COLOR: Checks The Grid and Then the Color For Because What's Inside the Actual Grid
- update_grid: 
-  # Updates Pointer For Grid # Update Grid ~ s3 is the last color
-  jal get_tile_color
-  sw $t5, 0($t0) 
-  # Jump to Keyboard
-  j jump_to_keyboard
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
- 
- get_tile_color: # Gets the Tile's Color To the s3 Avenger
-  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
-  # Start The Piece On the Top Right
-  lw $t0, $s1 #base = number or rows
-  lw $t1, GRID_COLUMNS #number of columns
-  mult $t2, $s2, $t1 #t2 = row * column #
-=======
    lw $t4, BOARD_COLOR       # background color
    lw $t7, LINE_COLOR        # grid line color
    li $t1, 0                 # y = 0
@@ -181,7 +82,6 @@
      seq  $t8, $t6, 0        # 1 if (y-22) % 15 == 0
      
    rowFlagsDone:
-
      li $t2, 0               # x = 0
 
      drawCol:
@@ -215,25 +115,81 @@
    drawExit:
      jr $ra
  
- get_tile_color: # Gets the Tile's Color To the s3 Avenger
+ # Board Utility: Update Board Pieces.
+ # Value = 0: EMPTY
+ # Value = 1: P1
+ # Value = 2: P2
+ update_board:
+  li $a0, 0 # Start Column
+  li $a1, 0 # End Column
+  
+  check_row_loop:
+   lw $t0, GRID_ROWS
+   lw $t1, GRID_COLUMNS
+   
+   lw $t2, PIECE_COLOR_P1
+   lw $t3, PIECE_COLOR_P2
+   
+   bge $a0, $t0, next_row
+   addi $a0, $a0, 1
+   
+   jal get_tile_number #s3 = tile number
+   
+   update_color_p1: #orange
+    sw  $t2, 0($t0)
+    j check_row_loop
+    
+   update_color_p2: #navy
+    sw  $t3, 0($t0)
+    j check_row_loop
+    
+   skip_update:
+    j check_row_loop
+    
+   next_row:
+    bge $a0, $t1, end_update_board
+    addi $a0, $a1, 1
+    j check_row_loop
+ 
+ end_update_board:
+  j game_loop 
+ 
+ get_tile_number: # Gets the Tile's Color From $a0 column # and $a1 row #
   # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
   # Start The Piece On the Top Right
   move $t0, $s1 #base $t0= number or rows
   lw $t1, GRID_COLUMNS #t1 = number of columns
   mult $t1, $s2 #t1 *= row #
->>>>>>> drawBoard
-  addi $t3, $t1, $t2 #t3 = sum
+  addi $t2, $t0, $t1 #t2 = total sum
   
-  sll $t4, $t3, 2 #Shift 2 literals
-  add $t4, $s4, $t4
-<<<<<<< HEAD
+  sll $t2, $t2, 2 #Shift 2 literals
+  lw $s3, 0($s2)
+  jal $ra
+
  
- set_color_board:
- 
+ # Draw The Piece After Updating Board
+ update_piece:
   sw $s4, 0($s4)
   
  
- # Game Loop + Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ # Game Loop + Insert Piece Functions. A.K.A Code => Bug => Regret => Despair => Wake Up => Repeat
+ # Game Loop
+ # 1) Checks For Keyboard 
+ # 2) 
+ game_loop:
+  lw $t0, current_player
+  lw $t1, player_col_start
+  lw $t2, player_row_start
+  
  wait_for_keyboard: # Loop Constatnly Checking For Inputs Of WASD Keys. When Insert (Space), Inset Piece At That Location
   
   lui $t0, 0xFFFF # Base MMIO Address
@@ -241,27 +197,12 @@
   andi $t1, $t1, 1 # Checks If Bit Is Ready
   beq $t1, $zero, wait_for_keyboard
  
-=======
- 
- set_color_board:
-  sw $s4, 0($s4)
-  
- 
- # Game Loop + Insert Piece Functions. Worst Case Scenario: One Piece Duplicates Recursively Into The Full Board Wingspan.
- wait_for_keyboard: # Loop Constatnly Checking For Inputs Of WASD Keys. When Insert (Space), Inset Piece At That Location
-  
-  lui $t0, 0xFFFF # Base MMIO Address
-  lw $t1, 0($t0) # Loads Control
-  andi $t1, $t1, 1 # Checks If Bit Is Ready
-  beq $t1, $zero, wait_for_keyboard
- 
->>>>>>> drawBoard
   lw $t2, 4($t0) # Loads Keyboard Address
  
  check_up: #Check Up Key
   li $t3, 'w'
   bne $t2, $t3, check_down
-  ble $s2, $zero, jump_to_keyboard
+  ble $s2, $zero, jump_to_game_loop
   addi $s2, $s2, -1 # row -= 1
   j update_grid
  
@@ -269,14 +210,14 @@
   li $t3, 's'
   bne $t2, $t3, check_left
   lw $t4, GRID_COLUMNS
-  bge $s2, $t4, jump_to_keyboard
+  bge $s2, $t4, jump_to_game_loop
   addi $s2, $s2, 1 # row += 1
   j update_grid
  
  check_left:
   li $t3, 'a'
   bne $t2, $t3, check_right
-  ble $s2, $zero, jump_to_keyboard
+  ble $s2, $zero, jump_to_game_loop
   addi $s1, $s1, -1 # column -= 1
   j update_grid
   
@@ -284,13 +225,13 @@
   li $t3, 'd'
   bne $t2, $t3, check_space
   lw $t4, GRID_ROWS
-  bge $s2, $t4, jump_to_keyboard
+  bge $s2, $t4, jump_to_game_loop
   addi $s1, $s1, 1 # column += 1
   j update_grid
   
  check_space: # Move to Insert Piece
   li $t3, ' '
-  bne $t2, $t3, jump_to_keyboard
+  bne $t2, $t3, jump_to_game_loop
   j insert_piece #s1 is col, s2 is row 
  
  insert_piece: # Inserts Piece
@@ -313,20 +254,24 @@
  #sw $s0, 0($t0) # Tutorial on switching to current_player to 0($t0)
  
  li $s0, 1
- j jump_to_keyboard
+ j jump_to_game_loop
  
  set_to_p2:
  li $s0, 2
- j jump_to_keyboard
+ j jump_to_game_loop
  
- jump_to_keyboard:
- j wait_for_keyboard
+ jump_to_game_loop:
+ lw $s1, player_row_start
+ lw $s2, player_col_start
+ jal update_grid
+ j game_loop
  
  # Win Functions
  simulate_win: # When Won, Will Show Text You Won In Bottom, and Cannot Place More Pieces.
  
  # Restart Function
- func_restart_board: # Clears the Board and Restarts
+ func_restart_game: # Clears the Board and Restarts
+  j main
  
  
  end_program: 
@@ -339,11 +284,15 @@
  
  # Idea: Rage Quit Button?
  
- # Idea: The Rubric Is the Insturctions or Add A Tutorial
+ # Idea: The Rubric Is the Instructions or Add A Tutorial
  
  # Idea: You Can Flip the Board Sideways Multiple Times or Expand It In Different Directions
  
  # Idea: Dark Mode
+ 
+ # Idea: Human Counter Where There are 8 Billion Humans But When We Run Out of Pieces "The Humans Escaped" and There are 0 Humans Even Though There are Still 8 Billion Humans on Earth. Twist: If There were 9 billion humans there would still be 8 billion humans.
+ 
+ # Idea: "Harder" Mode. Love of the game. "Hardest Mode." One More Time. Well, Maybe Not, They're Researching that in..."Hard-vard".
  
  # More Ideas To Be Added By Graydom Isom
  
