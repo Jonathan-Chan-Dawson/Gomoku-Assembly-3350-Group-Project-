@@ -1,5 +1,5 @@
 # Main Setup For Gomoku
-# Team Members: Jonathan Dawson, Bejamin Bruns, Graydon Isom, Caleb Lewis
+# Team Members: Jonathan Dawson, Benjamin Bruns, Graydon Isom, Caleb Lewis
 # Step 1: Make the Background and the Grid
 # Step 2: Have Player Be Player 1. Place a Piece in the 
 # Step 3: Use Move_Loop and li and move to continue moving and implementing
@@ -88,20 +88,20 @@
        bge $t2, 256, nextRow
        
        # not a grid line
-       move $t3, $t4         # brown
-       beq $t9, $zero, paint       # paint brown if outside of range
-       blt $t2, 22, paint    # x < 22 --> paint brown
-       bgt $t2, 232, paint   # x > 232 --> paint brown
+       move $t3, $t4       
+       beq $t9, $zero, paintBoard       # paint brown if outside of range
+       blt $t2, 22, paintBoard    # x < 22 --> paint brown
+       bgt $t2, 232, paintBoard   # x > 232 --> paint brown
        
        # grid line
        bne $t8, $zero, useLine     # horizontal line row -> line color
        addi $t5, $t2, -22
        rem  $t6, $t5, 15
-       bne $t6, $zero, paint       # if x - 22 % 15 == 0 then grid line
+       bne $t6, $zero, paintBoard       # if x - 22 % 15 == 0 then grid line
      useLine:
        move $t3, $t7         # line color
 
-     paint:
+     paintBoard:
        sw  $t3, 0($t0)
 
        addi $t2, $t2, 1
