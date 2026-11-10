@@ -117,13 +117,14 @@
  
  # Board Utility: Update Board Pieces.
  # Value = 0: EMPTY
- # Value = 1: P1
- # Value = 2: P2
+ # Value = 1: P1 (orange)
+ # Value = 2: P2 (navy)
  update_board:
   li $a0, 0 # Start Column
   li $a1, 0 # End Column
   
   check_row_loop:
+   # start of loop
    lw $t0, GRID_ROWS
    lw $t1, GRID_COLUMNS
    
@@ -133,17 +134,36 @@
    bge $a0, $t0, next_row
    addi $a0, $a0, 1
    
-   jal get_tile_number #s3 = tile number
+   jal get_tile_number #a0 is x, a1 is y, s3 = tile number
    
-   update_color_p1:
-    sw  $t2, 0($t0)
-    j check_row_loop
+   # switch to the function: paint or skip?
+   li $t4, 0
+   li $t5, 1
+   li $t6, 2
+   beq $s3, $t4, skip_update
+   beq $s3, $t5, update_color_p1
+   beq $s3, $t6, update_color_p2
+   
+   j skip_update #Fall Back
+   
+   # update board functions
+   
+   update_color_p1: #orange
+    move $t7, $t2
+    j paint
     
-   update_color_p2:
-    sw  $t3, 0($t0)
-    j check_row_loop
+   update_color_p2: #navy
+    move $t7, $t3
+    j paint
     
-   skip_update:
+   skip_update: #color it back to the grid or skip
+    j check_row_loop
+   
+   paint:
+    # Get s3, The Tile Number
+    # Or Get t0 and t1, Confident Those are X's and Y's
+    sw  $t4, 0($s3) # Then Paint. $t7 is Now Famous.
+   
     j check_row_loop
     
    next_row:
@@ -154,7 +174,7 @@
  end_update_board:
   j game_loop 
  
- get_tile_number: # Gets the Tile's Color From $a0 column # and $a1 row #
+ get_tile_number: # Gets the Tile's Color Number From $a0 column # and $a1 row #
   # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
   # Start The Piece On the Top Right
   move $t0, $s1 #base $t0= number or rows

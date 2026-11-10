@@ -14,5 +14,4 @@ class MARS_MIPS_AI(gym.Env):
 # Make 0 be space, 1: W, 2: A, 3: S, 4: D
   def main():
     
-
     return
