@@ -38,3 +38,7 @@ cpp/build/
 *.0
 *.out
 *.exe
+
+AI-Trainer/build/
+AI-Trainer/compile_commands.json
+AI-Trainer/.cache/
