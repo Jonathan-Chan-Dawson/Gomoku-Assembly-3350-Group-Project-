@@ -44,17 +44,27 @@
   la $s4, GOMOKU_GRID # The 15 * 15 array. 0 = no piece, 1 = P1, 2 = P2
  
   jal drawBoard
-  j wait_for_keyboard
+  
+  li $a0, 7
+  li $a1, 7
+  li $a2, 0x00DD550C # Auburn Orange
+  jal drawPiece
+  li $a0, 7
+  li $a1, 8
+  li $a2, 0x000C2340 # Auburn Navy
+  jal drawPiece
+  
+  li $v0, 10
+  syscall
 
  
-# Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color. 
+
 # DRAW BOARD ------------------------------------------------------------ 
 # Fill 512x512 Bitmap display with brown
 # Unit width x height is 2 x 2
 # Start is at 0x10040000 on the heap
+# Draw grid lines from (22, 22) to (232, 232) with 14 pixels between each grid line
 # DRAW BOARD ------------------------------------------------------------
-# Fill a 15x15 Gomoku board starting from 0,0
-# 50x50 pixel diff in grid space
 
  drawBoard:
    lw $t4, BOARD_COLOR       # background color
@@ -88,16 +98,16 @@
        bge $t2, 256, nextRow
        
        # not a grid line
-       move $t3, $t4       
+       move $t3, $t4         # brown
        beq $t9, $zero, paintBoard       # paint brown if outside of range
-       blt $t2, 22, paintBoard    # x < 22 --> paint brown
+       blt $t2, 22, paintBoard   # x < 22 --> paint brown
        bgt $t2, 232, paintBoard   # x > 232 --> paint brown
        
        # grid line
        bne $t8, $zero, useLine     # horizontal line row -> line color
        addi $t5, $t2, -22
        rem  $t6, $t5, 15
-       bne $t6, $zero, paintBoard       # if x - 22 % 15 == 0 then grid line
+       bne $t6, $zero, paintBoard      # if x - 22 % 15 == 0 then grid line
      useLine:
        move $t3, $t7         # line color
 
@@ -114,8 +124,51 @@
 
    drawExit:
      jr $ra
+
+# DRAW PIECE ----------------------------------------------------------------------------
+# Draws a rectangular piece at ($a0, $a1) == (x, y) of size 10x10
+# a2 holds the piece color
+# DRAW PIECE ----------------------------------------------------------------------------
  
- # Board Utility: Update Board Pieces.
+ drawPiece:
+   li   $t7, 15 # grid spacing
+   mul  $t0, $a0, $t7
+   addi $t0, $t0, 22 # ux = 15*col + 22
+   mul  $t1, $a1, $t7
+   addi $t1, $t1, 22 # uy = 15*row + 22
+   
+   subi $t0, $t0, 5
+   subi $t1, $t1, 5
+   
+   lw $t2, BOARD_START
+   sll $t3, $t1, 10 # uy * 1024 (256 * 4 bytes per row)
+   sll $t4, $t0, 2 # ux * 4 (4 bytes per pixel)
+   addu $t2, $t2, $t3 # Board start + y pixel
+   addu $t2, $t2, $t4 # finds top-left corner of piece
+   
+   li $t5, 0 # y = 0
+   
+   pieceRow:
+     bgt $t5, 10, endDrawPiece
+     move $t6, $t2 
+     li $t7, 0
+     
+     pieceCol:
+       bgt $t7, 10, endPieceCol
+       sw $a2, 0($t6)
+       addi $t6, $t6, 4
+       addi $t7, $t7, 1 # Loop invariant
+       j pieceCol
+     
+     endPieceCol:
+       addi $t2, $t2, 1024 # Next row from left edge
+       addi $t5, $t5, 1 # Add to row count
+       j pieceRow
+   
+   endDrawPiece:
+     jr $ra
+  
+# Board Utility: Update Board Pieces.
  # Value = 0: EMPTY
  # Value = 1: P1 (orange)
  # Value = 2: P2 (navy)
@@ -290,7 +343,16 @@
  simulate_win: # When Won, Will Show Text You Won In Bottom, and Cannot Place More Pieces.
  
  # Restart Function
- func_restart_game: # Clears the Board and Restarts
+ func_restart_game: 
+  li $t0, 0
+  move $t1, $s4
+  clear_loop:
+  bge $t0, 225, clear_done
+  sw $zero, 0($t1)
+  addi $t0, $t0, 1
+  addi $t1, $t1, 4
+  j clear_loop
+  clear_done:
   j main
  
  
@@ -300,9 +362,7 @@
   
  # Idea: Use "On Claude" AI. Sends quotes
  
- # Idea: "Hard" Mode
  
- # Idea: Rage Quit Button?
  
  # Idea: The Rubric Is the Instructions or Add A Tutorial
  
