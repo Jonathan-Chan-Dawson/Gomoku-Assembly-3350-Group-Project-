@@ -60,7 +60,6 @@
   syscall
 
  
-# Draw Grid: a0 = x, a1 = y, a2 = width, a3 = height. t0 will be color. 
 
 # DRAW BOARD ------------------------------------------------------------ 
 # Fill 512x512 Bitmap display with brown
@@ -68,8 +67,6 @@
 # Start is at 0x10040000 on the heap
 # Draw grid lines from (22, 22) to (232, 232) with 14 pixels between each grid line
 # DRAW BOARD ------------------------------------------------------------
-# Fill a 15x15 Gomoku board starting from 0,0
-# 50x50 pixel diff in grid space
 
  drawBoard:
    lw $t4, BOARD_COLOR       # background color
