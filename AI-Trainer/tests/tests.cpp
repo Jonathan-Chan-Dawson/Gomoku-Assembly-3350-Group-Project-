@@ -1,7 +1,8 @@
 #include <cassert>
 #include <cstdio>
 
-int main() {
+int main()
+{
     assert(true);
     std::puts("all tests passed");
 }
