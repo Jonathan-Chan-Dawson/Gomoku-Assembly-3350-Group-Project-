@@ -14,7 +14,7 @@ int main(int argc, char* argv[]){
 
         if (arg == "--games" && i + 1 < argc) {
             games = stoi(argv[i + 1]); // text -> int
-            i++;                            // skip the value we just consumed
+            i++;                            // skip the value that was just consumed
         } else if (arg == "--seed" && i + 1 < argc) {
             seed = stoul(argv[i + 1]); // text -> int
             i++;                            // skip the value
