@@ -8,9 +8,9 @@
 # Notes: Use t For Temporary, a For Into-Functions, v for syscalls
  .data
  BOARD_START: .word 0x10010004 # start in top left corner
- BOARD_COLOR: .word 0x00E8D3A8 # Dark brown board color
- LINE_COLOR: .word 0x004A3B2A # light tan
  imageBuffer: .space 0x80000 # allocate space for 512 x 256 x 4 (each pixel is stored with a word)
+ BOARD_COLOR: .word 0x00E8D3A8 # light tan board color
+ LINE_COLOR: .word 0x004A3B2A # darker grid color
  
  # Grid
  GRID_X: .word 50 # Start X
@@ -145,7 +145,7 @@
   
   check_row_loop:
    # start of loop
-   jal update_board_at_pos
+    # jal update_board_at_pos
    
    lw $t0, GRID_ROWS
        
@@ -237,7 +237,7 @@
   
   skip_update: # color it back to the grid or skip
    lw $a2, BOARD_COLOR # placeholder: in future it'll redraw grid
-   jal paint_piece # placeholder: in future it'll redraw grid
+   jal draw_empty_piece # placeholder: in future it'll redraw grid
    j end_update
  
   end_update:
@@ -292,8 +292,61 @@
      jr $ra
 
  
+ # DRAW EMPTY PIECE ------------------------------------------
+ # a0 holds x
+ # a1 holds y
+ # a2 holds color
+ # Needs to draw a 5x5 board-colored piece with grid lines over the top to replace moving pieces
+ # -----------------------------------------------------------------
  
- 
+ draw_empty_piece:
+   li   $t7, 15 # grid spacing
+   lw $t9, LINE_COLOR # line color
+   mul  $t0, $a0, $t7
+   addi $t0, $t0, 22 # ux = 15*col + 22
+   mul  $t1, $a1, $t7
+   addi $t1, $t1, 22 # uy = 15*row + 22
+   
+   subi $t0, $t0, 5
+   subi $t1, $t1, 5
+   
+   lw $t2, BOARD_START
+   sll $t3, $t1, 10 # uy * 1024 (256 * 4 bytes per row)
+   sll $t4, $t0, 2 # ux * 4 (4 bytes per pixel)
+   addu $t2, $t2, $t3 # Board start + y pixel
+   addu $t2, $t2, $t4 # finds top-left corner of piece
+   
+   li $t5, 0 # y = 0
+   
+   emptyPieceRow:
+     bgt $t5, 10, endDrawEmptyPiece
+     move $t6, $t2 
+     li $t7, 0
+     
+     emptyPieceCol:
+       bgt $t7, 10, endEmptyPieceCol
+       
+       beq $t7, 5, gridColor
+       beq $t5, 5, gridColor
+       
+       sw $a2, 0($t6)
+       addi $t6, $t6, 4
+       addi $t7, $t7, 1 # Loop invariant
+       j emptyPieceCol
+     
+     endEmptyPieceCol:
+       addi $t2, $t2, 1024 # Next row from left edge
+       addi $t5, $t5, 1 # Add to row count
+       j emptyPieceRow
+       
+     gridColor:
+       sw $t9, 0($t6)
+       addi $t6, $t6, 4
+       addi $t7, $t7, 1 # Loop invariant
+       j emptyPieceCol
+   
+   endDrawEmptyPiece:
+     jr $ra
  
  
  # Game Loop + Insert Piece Functions. A.K.A Code => Bug => Regret => Despair => Wake Up => Repeat
