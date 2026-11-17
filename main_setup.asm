@@ -536,7 +536,7 @@
   syscall # A Force of Nature
  
   
- # This section has its own entrance music. u cant hear it. its like john cena.
+ # This section has its own entrance music. u cant hear it though, because its john cena.
  
  # Idea: Dark Mode. 
  
