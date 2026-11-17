@@ -7,7 +7,7 @@
 
 # Notes: Use t For Temporary, a For Into-Functions, v for syscalls
  .data
- BOARD_START: .word 0x10040000 # start in top left corner
+ BOARD_START: .word 0x10010004 # start in top left corner
  BOARD_COLOR: .word 0x00E8D3A8 # Dark brown board color
  LINE_COLOR: .word 0x004A3B2A # light tan
  imageBuffer: .space 0x80000 # allocate space for 512 x 256 x 4 (each pixel is stored with a word)
@@ -46,17 +46,16 @@
  
   jal drawBoard # <= All Good 
   j game_loop # Enter Eternal Loop
-  jal drawBoard
   
-  li $a0, 7
-  li $a1, 7
-  li $a2, 0x00DD550C # Auburn Orange
-  jal paint_piece
-  li $a0, 7
-  li $a1, 8
-  li $a2, 0x000C2340 # Auburn Navy
-  jal paint_piece
-  
+  #jal drawBoard
+  #li $a0, 7
+  #li $a1, 7
+  #li $a2, 0x00DD550C # Auburn Orange
+  #jal paint_piece
+  #li $a0, 7
+  #li $a1, 8
+  #li $a2, 0x000C2340 # Auburn Navy
+  #jal paint_piece
   li $v0, 10
   syscall
 
@@ -135,55 +134,85 @@
  # Value = 1: P1 (orange)
  # Value = 2: P2 (navy)
  update_board:
-  addi $sp, $sp, -4
+  addi $sp, $sp, -16
   sw $ra, 0($sp)
+  sw $a0, 4($sp)
+  sw $a1, 8($sp)
+  sw $a2, 12($sp)
   
   li $a0, 0 # Start Column
   li $a1, 0 # Start Row
   
   check_row_loop:
    # start of loop
-   lw $t0, GRID_ROWS
-   lw $t1, GRID_COLUMNS
-
-   bge $a0, $t0, next_row
-   addi $a0, $a0, 1
-   
    jal update_board_at_pos
    
+   lw $t0, GRID_ROWS
+       
+   addi $a0, $a0, 1
+   bge $a0, $t0, next_row
+   
+   j check_row_loop
+   
    next_row:
-    bge $a1, $t1, end_update_board
+    lw $t1, GRID_COLUMNS
+    
     addi $a1, $a1, 1
+    bge $a1, $t1, end_update_board
+    li $a0, 0
     j check_row_loop
  
  end_update_board:
-  sw $ra, 0($sp)
+  lw $a2, 12($sp)
+  lw $a1, 8($sp)
+  lw $a0, 4($sp)
+  lw $ra, 0($sp) #use lw at end!
+  addi $sp, $sp, 16
   jr $ra # Enter Eternal Suffering (Episode 2)
  
+ set_tile_number: # Sets the Tile's Color Number From $a0 column # and $a1 row #, and $a2 tile #
+  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
+  # Start The Piece On the Top Right
+  lw $t0, GRID_COLUMNS
+  mul $t0, $a0, $t0 # $t1 = current column # * row #
+  move $t1, $a1 # $t2 = current row #
+  add $t2, $t0, $t1 #t2 = total sum
+
+  sll $t2, $t2, 2 # Shift 2 literals. We are Now Smart.
+  add $t2, $s4, $t2 # GOMOKU_GRID + offset
+ 
+  sw $a2, 0($t2) # load tile value into $s3
+  jr $ra
+  
  get_tile_number: # Gets the Tile's Color Number From $a0 column # and $a1 row #
   # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
   # Start The Piece On the Top Right
-  move $t0, $s1 #base $t0 = number or rows
-  lw $t1, GRID_COLUMNS #t1 = number of columns
-  mult $t1, $s2 #t1 *= row #
+  lw $t0, GRID_COLUMNS
+  mul $t0, $a0, $t0 # $t1 = current column # * row #
+  move $t1, $a1 # $t2 = current row #
   add $t2, $t0, $t1 #t2 = total sum
-  
-  sll $t2, $t2, 2 #Shift 2 literals. We are Now Smart.
-  lw $s3, 0($s4)
+
+  sll $t2, $t2, 2 # Shift 2 literals. We are Now Smart.
+  add $t2, $s4, $t2 # GOMOKU_GRID + offset
+  lw $s3, 0($t2) # load tile value into $s3
   jr $ra
   
 
  # Update Board At Pos
  update_board_at_pos: #$a0 is column, $a1 is row
-  addi $sp, $sp, -4
-  sw $ra, 4($sp)
+  addi $sp, $sp, -16
+  sw $ra, 0($sp)
+  sw $a0, 4($sp)
+  sw $a1, 8($sp)
+  sw $a2, 12($sp)
+  
   # start of loop
 
   lw $t0, PIECE_COLOR_P1
   lw $t1, PIECE_COLOR_P2
-   
-  jal get_tile_number #a0 is x, a1 is y, s3 = tile number
-   
+
+  jal get_tile_number #a0 is x, a1 is y, s3 = returned tile number
+
   # switch to the function: paint or skip drawing piece? <= Calculated.
   li $t2, 0
   li $t3, 1
@@ -192,27 +221,31 @@
   beq $s3, $t3, update_color_p1
   beq $s3, $t4, update_color_p2
   
-  j skip_update # Fall Back
+  j end_update # Fall Back: Don't Update
    
   # update board functions
    
   update_color_p1: #orange
-   move $a2, $t2
+   lw $a2, PIECE_COLOR_P1
    jal paint_piece
    j end_update
   
   update_color_p2: #navy
-   move $a2, $t3
+   lw $a2, PIECE_COLOR_P2
    jal paint_piece
    j end_update
   
   skip_update: # color it back to the grid or skip
+   lw $a2, BOARD_COLOR # placeholder: in future it'll redraw grid
+   jal paint_piece # placeholder: in future it'll redraw grid
    j end_update
  
   end_update:
-   lw $ra, 0($sp)
-   addi $sp, $sp, 4
-
+   lw $a2, 12($sp)
+   lw $a1, 8($sp)
+   lw $a0, 4($sp)
+   lw $ra, 0($sp) #use lw at end
+   addi $sp, $sp, 16
    jr $ra
   
 # DRAW PIECE ----------------------------------------------------------------------------
@@ -277,6 +310,7 @@
   lw $s2, player_col_start
 
   jal update_board
+  j update_pointer_piece
 
  wait_for_keyboard: 
   lui $t0, 0xFFFF     # Base MMIO Address
@@ -290,7 +324,7 @@
  check_up: #Check Up Key
   li $t3, 'w'
   bne $t2, $t3, check_down
-  ble $s2, $zero, jump_to_game_loop
+  ble $s2, $zero, jump_to_keyboard
   move $a0, $s2
   addi $s2, $s2, -1 # row -= 1
   
@@ -305,7 +339,8 @@
   li $t3, 's'
   bne $t2, $t3, check_left
   lw $t4, GRID_COLUMNS
-  bge $s2, $t4, jump_to_game_loop
+  addi $t4, $t4, -1
+  bge $s2, $t4, jump_to_keyboard
   addi $s2, $s2, 1 # row += 1
   
   addi $a0, $s1, 0 # column
@@ -318,7 +353,7 @@
  check_left:
   li $t3, 'a'
   bne $t2, $t3, check_right
-  ble $s2, $zero, jump_to_game_loop
+  ble $s1, $zero, jump_to_keyboard
   addi $s1, $s1, -1 # column -= 1
   
   addi $a0, $s1, 1 # column
@@ -333,7 +368,8 @@
   li $t3, 'd'
   bne $t2, $t3, check_space
   lw $t4, GRID_ROWS
-  bge $s2, $t4, jump_to_game_loop
+  addi $t4, $t4, -1
+  bge $s1, $t4, jump_to_keyboard
   addi $s1, $s1, 1 # column += 1
   
   addi $a0, $s1, -1 # column
@@ -345,7 +381,7 @@
   
  check_space: # Move to Insert Piece
   li $t3, ' '
-  bne $t2, $t3, jump_to_game_loop
+  bne $t2, $t3, jump_to_keyboard
   j insert_piece #s1 is col, s2 is row 
  
  
@@ -371,14 +407,20 @@
   update_piece_paint:
    jal paint_piece
   
+  j wait_for_keyboard # Wait for keyboard after update pointer.
+  
  # Use $a0, $a1 for position
  # Will Update the Last Piece
  insert_piece: # Inserts Piece
-  # Hellscape Activated: place piece in array!
-  
+  # Insert Mode Activated: place piece in array!
   # Update Position
   move $a0, $s1
   move $a1, $s2
+  move $a2, $s0
+  jal get_tile_number
+  bne, $s3, 0, jump_to_keyboard #don't set tile if not empty
+  
+  jal set_tile_number
   jal update_board_at_pos
   
  
@@ -387,8 +429,8 @@
  switch_players: # Switch Players After Check Win, Then End Turn. Think a Speed-Bump
   li $t0, 1 # <= 1
   li $t1, 2 # <= 2
-  beq $s0, $t0, set_to_p1 #If Player is not 1, Switch To P2, Else Switch To P1
-  beq $s0, $t1, set_to_p2 #If Player is not 1, Switch To P2, Else Switch To P1
+  beq $s0, $t0, set_to_p2 #If Player is not 1, Switch To P2, Else Switch To P1
+  beq $s0, $t1, set_to_p1 #If Player is not 1, Switch To P2, Else Switch To P1
   
   j jump_to_game_loop # reset
   
@@ -396,7 +438,6 @@
    #li $s0, 1
    #la $t0, current_player
    #sw $s0, 0($t0) # Tutorial on switching to current_player to 0($t0)
-  
    li $s0, 1
    j jump_to_game_loop
  
@@ -406,6 +447,9 @@
  
  jump_to_game_loop:
   j game_loop
+ 
+ jump_to_keyboard:
+  j wait_for_keyboard
  
  # Win Functions
  # When Won, Will Show Text You Won In Bottom, and Cannot Place More Pieces.
@@ -431,7 +475,7 @@
    
   clear_done:
    jal update_board
-   j main
+   j main # This Finishes After GTA 6's Release
  
  # Smart, Neccesary...and Dangerous
  end_program: 
