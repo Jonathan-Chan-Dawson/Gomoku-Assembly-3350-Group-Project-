@@ -46,15 +46,16 @@
  
   jal drawBoard # <= All Good 
   j game_loop # Enter Eternal Loop
+  jal drawBoard
   
   li $a0, 7
   li $a1, 7
   li $a2, 0x00DD550C # Auburn Orange
-  jal drawPiece
+  jal paint_piece
   li $a0, 7
   li $a1, 8
   li $a2, 0x000C2340 # Auburn Navy
-  jal drawPiece
+  jal paint_piece
   
   li $v0, 10
   syscall
@@ -130,12 +131,96 @@
  # VGhlIGtleSBpcyBoaWRkZW4gaW4gdGhlIGVycm9yIGxvZ3Mu 
   
  # Board Utility: Update Board Pieces.
+ # Value = 0: EMPTY
+ # Value = 1: P1 (orange)
+ # Value = 2: P2 (navy)
+ update_board:
+  addi $sp, $sp, -4
+  sw $ra, 0($sp)
+  
+  li $a0, 0 # Start Column
+  li $a1, 0 # Start Row
+  
+  check_row_loop:
+   # start of loop
+   lw $t0, GRID_ROWS
+   lw $t1, GRID_COLUMNS
+
+   bge $a0, $t0, next_row
+   addi $a0, $a0, 1
+   
+   jal update_board_at_pos
+   
+   next_row:
+    bge $a1, $t1, end_update_board
+    addi $a1, $a1, 1
+    j check_row_loop
+ 
+ end_update_board:
+  sw $ra, 0($sp)
+  jr $ra # Enter Eternal Suffering (Episode 2)
+ 
+ get_tile_number: # Gets the Tile's Color Number From $a0 column # and $a1 row #
+  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
+  # Start The Piece On the Top Right
+  move $t0, $s1 #base $t0 = number or rows
+  lw $t1, GRID_COLUMNS #t1 = number of columns
+  mult $t1, $s2 #t1 *= row #
+  add $t2, $t0, $t1 #t2 = total sum
+  
+  sll $t2, $t2, 2 #Shift 2 literals. We are Now Smart.
+  lw $s3, 0($s4)
+  jr $ra
+  
+
+ # Update Board At Pos
+ update_board_at_pos: #$a0 is column, $a1 is row
+  addi $sp, $sp, -4
+  sw $ra, 4($sp)
+  # start of loop
+
+  lw $t0, PIECE_COLOR_P1
+  lw $t1, PIECE_COLOR_P2
+   
+  jal get_tile_number #a0 is x, a1 is y, s3 = tile number
+   
+  # switch to the function: paint or skip drawing piece? <= Calculated.
+  li $t2, 0
+  li $t3, 1
+  li $t4, 2
+  beq $s3, $t2, skip_update
+  beq $s3, $t3, update_color_p1
+  beq $s3, $t4, update_color_p2
+  
+  j skip_update # Fall Back
+   
+  # update board functions
+   
+  update_color_p1: #orange
+   move $a2, $t2
+   jal paint_piece
+   j end_update
+  
+  update_color_p2: #navy
+   move $a2, $t3
+   jal paint_piece
+   j end_update
+  
+  skip_update: # color it back to the grid or skip
+   j end_update
+ 
+  end_update:
+   lw $ra, 0($sp)
+   addi $sp, $sp, 4
+
+   jr $ra
+  
 # DRAW PIECE ----------------------------------------------------------------------------
 # Draws a rectangular piece at ($a0, $a1) == (x, y) of size 10x10
 # a2 holds the piece color
 # DRAW PIECE ----------------------------------------------------------------------------
  
- drawPiece:
+ paint_piece:
    li   $t7, 15 # grid spacing
    mul  $t0, $a0, $t7
    addi $t0, $t0, 22 # ux = 15*col + 22
@@ -172,89 +257,7 @@
    
    endDrawPiece:
      jr $ra
-  
-# Board Utility: Update Board Pieces.
- # Value = 0: EMPTY
- # Value = 1: P1 (orange)
- # Value = 2: P2 (navy)
- update_board:
-  li $a0, 0 # Start Column
-  li $a1, 0 # Start Row
-  
-  check_row_loop:
-   # start of loop
-   lw $t0, GRID_ROWS
-   lw $t1, GRID_COLUMNS
 
-   bge $a0, $t0, next_row
-   addi $a0, $a0, 1
-   
-   jal update_board_at_pos
-   
-   next_row:
-    bge $a0, $t1, end_update_board
-    addi $a1, $a1, 1
-    j check_row_loop
- 
- end_update_board:
-  j game_loop # Enter Eternal Suffering (Episode 2)
- 
- get_tile_number: # Gets the Tile's Color Number From $a0 column # and $a1 row #
-  # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
-  # Start The Piece On the Top Right
-  move $t0, $s1 #base $t0 = number or rows
-  lw $t1, GRID_COLUMNS #t1 = number of columns
-  mult $t1, $s2 #t1 *= row #
-  add $t2, $t0, $t1 #t2 = total sum
-  
-  sll $t2, $t2, 2 #Shift 2 literals. We are Now Smart.
-  lw $s3, 0($s4)
-  jr $ra
-  
-
- # Update Board At Pos
- update_board_at_pos: #$a0 is column, $a1 is row
-  # start of loop
-
-  lw $t0, PIECE_COLOR_P1
-  lw $t1, PIECE_COLOR_P2
-   
-  jal get_tile_number #a0 is x, a1 is y, s3 = tile number
-   
-  # switch to the function: paint or skip?
-  li $t2, 0
-  li $t3, 1
-  li $t4, 2
-  beq $s3, $t2, skip_update
-  beq $s3, $t3, update_color_p1
-  beq $s3, $t4, update_color_p2
-  
-  j skip_update # Fall Back
-   
-  # update board functions
-   
-  update_color_p1: #orange
-   move $a2, $t2
-   jal paint_piece
-   j end_update
-  
-  update_color_p2: #navy
-   move $a2, $t3
-   jal paint_piece
-   j end_update
-  
-  skip_update: # color it back to the grid or skip
-   j end_update
- 
-  end_update:
-   jr $ra
-  
- 
- paint_piece: 
-   # piece is painted at position $a0, $a1, $a2 is color
-   # paint the pieces here: $a0 and $a1 are row, column
-   # shape tba 
-  jr $ra
  
  
  
@@ -270,25 +273,25 @@
  # 6) On Win, Press 'r' To Reset (Loop) and Then Show Player Won and End
  
  game_loop:
-  lw $t0, current_player
-  lw $t1, player_col_start
-  lw $t2, player_row_start
+  lw $s1, player_row_start
+  lw $s2, player_col_start
+
+  jal update_board
+
+ wait_for_keyboard: 
+  lui $t0, 0xFFFF     # Base MMIO Address
+  lw $t1, 0($t0)      # Loads Control
+  andi $t1, $t1, 1    # Checks If Bit Is Ready
+  beq $t1, $zero, wait_for_keyboard # IF NOT READY (zero), repeat
   
- wait_for_keyboard: # Loop Constatnly Checking For Inputs Of WASD Keys. When Insert (Space), Inset Piece At That Location
+ read_key:
+  lb $t2, 4($t0)      # Get the character code from data register
   
-  lui $t0, 0xFFFF # Base MMIO Address
-  lw $t1, 0($t0) # Loads Control
-  andi $t1, $t1, 1 # Checks If Bit Is Ready
-  beq $t1, $zero, wait_for_keyboard
- 
-  lw $t2, 4($t0) # Loads Keyboard Address
- 
  check_up: #Check Up Key
   li $t3, 'w'
   bne $t2, $t3, check_down
   ble $s2, $zero, jump_to_game_loop
   move $a0, $s2
-  li $a1, 0 # 0 = vertical, 2 = horizontal
   addi $s2, $s2, -1 # row -= 1
   
   addi $a0, $s1, 0 # column
@@ -347,7 +350,6 @@
  
  
   
-  
  
  # Just a Bit: Draw The Pointer Piece After Updating Board
  # $a0 and $a1 updates the piece
@@ -359,10 +361,10 @@
   beq $s0, 1, get_color_p1
   beq $s0, 2, get_color_p2
   
-  get_color_p1:
+  get_color_p1: # Calculated!
    lw $a2, PIECE_COLOR_P1
    j update_piece_paint
-  get_color_p2:
+  get_color_p2: # Poorly...
    lw $a2, PIECE_COLOR_P2
    j update_piece_paint
   
@@ -403,9 +405,6 @@
    j jump_to_game_loop
  
  jump_to_game_loop:
-  lw $s1, player_row_start
-  lw $s2, player_col_start
-  jal update_board
   j game_loop
  
  # Win Functions
@@ -438,19 +437,38 @@
  end_program: 
   li $v0, 10 
   syscall # A Force of Nature
+ 
   
+ # This section has its own entrance music. u cant hear it. its like john cena.
+ 
  # Idea: Dark Mode. 
  
  # Idea: Flip Board?
  
- # Here be Dragons
+ # I don't leave comments. I leave legacies.
+ 
+ # ====
+ # Banana Theory: Everything in the world is a banana. There is evidence the Universe itself is shaped as a banana; the molecues inside and planets all represent micro-atoms, which, in planck scale, do not form straight lines, but rather crescent shaped curvature. This is a law that compares in scale to Newton's, Hooke's, and Kepler's Laws
+ # Gravity, Eletromagnetism, and strong and weak forces are merely the result of sub-atomic bananas interlocking, peeling, and bruising among each other. A black hole, for instance, is a region in space where bananas are mashed so densely even light cannot escape the peel.
+ # To Add Onto this, 60% of human's DNA is identical to that of a banana. Evolutionary Biologist Attribute this to a Common Ancestor, However, the Pan-Banana Model Argues the Opposite: Humans are merely bi-pedal transport systems engineered with banana DNA to spread potasium across the globe.
+ # The mitochandria, is often called "the powerhouse of the cell". Under high-powered eletron microscopes, these mitochondia are distinctly bean, or banana-shaped, proving life itself is powered by microscopic bananas.
+ # Bananas Disguise Themslves as a Unique Fruit, But Are Actually In the Family of True Berries. Maybe They're Hiding a Secret About Their True Origin...
+ # Across human civilization and various cultures, the banana has become an ultimate unit of measurement: "banana of scale". This isn't an internet joke; this is the subconcious recognition of the fundemental truth of how bananas are the only accurate unit of measurement because everything else is already made out of bananas.
+ # There may be finite timelines where humans survive, with as time going on, there are less and less timelines where we actually survive. Take Nuclear Bombs, for Instance. There are less and less timelines where humans are still going, ramping up to the 1950's where true nuclear powers form. This all leads up to now. You see wars, Soveit Union Falling, Iran War, Advance of AI, Smartphones. All the Other Timelines are Extinguished, Leading to the Inevitable: the Only timeline possible is one where ridiculous and bizare things are to happen. 
+ # This therefore is visualized in a banana, where as you open the peel, you see more of the inside of the fruit, the non-viable seeds, and its pale inner core, when biting into it. It's a matter of time until the fruit is no more... 
+ # End of Banana Theory. Best theory imaginable.
+ # ====
+ 
+ # Here be Dragons. (These are actually scaley, fire-breathing lizards with the empathy of housecats. With negative impulse control. and everytime a fire is started it is purely accidental. it's just they have a hiccup or a small burp and it can burn someone's eyebrow off mystically...hence why they take a 300-year recovery of depression by taking a power-nap)
  
  # More Ideas To Be Added By Graydom Isom <= Senior Dev
  
  # Maybe Benjamin Bruns <= Duct Tape Warrior :)
  
- # Final Step: Put This On LinkedIn Homepage!
+ # And Caleb Lewis Will Make Claude 2.0 <=
  
- # Other Idea: "Hard Mode." Hard-vard is Still Cooking Up Database Research. Or... Dad-abase Research!!! (Get it?? Get It..?)
+ # Final Step: Put This On LinkedIn Homepage
+ 
+ # Other Idea: "Hard Mode." Hard-vard is Still Cooking Up Database Research. Or... Dad-abase Research! (Get it?? Get It..?)
  
  
