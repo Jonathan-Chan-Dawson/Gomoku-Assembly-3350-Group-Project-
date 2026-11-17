@@ -168,7 +168,7 @@
   lw $a0, 4($sp)
   lw $ra, 0($sp) #use lw at end!
   addi $sp, $sp, 16
-  jr $ra # Enter Eternal Suffering (Episode 2)
+  jr $ra # Enter..Eternal Suffering (Episode 2)
  
  set_tile_number: # Sets the Tile's Color Number From $a0 column # and $a1 row #, and $a2 tile #
   # Calculation For Array: Base + (row * Col #) * 4 (4 Bytes Allocated Per Word)
@@ -471,7 +471,7 @@
   move $a1, $s2
   move $a2, $s0
   jal get_tile_number
-  bne, $s3, 0, jump_to_keyboard #don't set tile if not empty
+  bne, $s3, 0, jump_to_keyboard # don't set tile if not empty
   
   jal set_tile_number
   jal update_board_at_pos
@@ -542,7 +542,7 @@
  
  # Idea: Flip Board?
  
- # I don't leave comments. I leave legacies.
+ # I don't leave comments..I leave legacies.
  
  # ====
  # Banana Theory: Everything in the world is a banana. There is evidence the Universe itself is shaped as a banana; the molecues inside and planets all represent micro-atoms, which, in planck scale, do not form straight lines, but rather crescent shaped curvature. This is a law that compares in scale to Newton's, Hooke's, and Kepler's Laws
