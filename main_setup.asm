@@ -560,12 +560,14 @@
  
  # More Ideas To Be Added By Graydom Isom <= Senior Dev
  
- # Maybe Benjamin Bruns <= Duct Tape Warrior :)
+ # Maybe Benjamin Bruns <= Coding Warrior
  
- # And Caleb Lewis Will Make Claude 2.0 <=
+ # And Caleb Lewis Will Make Claude 2.0 <= Academic Weapon
+ 
+ # And Jonathan. We'll Find Out About Him <= (Not Sus) (Pleads the 5th) (shhh)
  
  # Final Step: Put This On LinkedIn Homepage
  
- # Other Idea: "Hard Mode." Hard-vard is Still Cooking Up Database Research. Or... Dad-abase Research! (Get it?? Get It..?)
+ # Other Idea: "Hard Mode." Hard-vard is Still Cooking Up..Dada-base Research.
  
  
