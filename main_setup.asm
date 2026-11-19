@@ -295,7 +295,6 @@
  # DRAW EMPTY PIECE ------------------------------------------
  # a0 holds x
  # a1 holds y
- # a2 holds color
  # Needs to draw a 5x5 board-colored piece with grid lines over the top to replace moving pieces
  # -----------------------------------------------------------------
  
@@ -379,41 +378,92 @@
   bne $t2, $t3, check_down
   ble $s2, $zero, jump_to_keyboard
   move $a0, $s2
-  addi $s2, $s2, -1 # row -= 1
+  
+  # Store old piece position
+  move $s5, $s1
+  move $s6, $s2
+  
+  # Collision checking
+  find_up_spot:
+    ble $s2, $zero, jump_to_keyboard # If row goes out of bounds don't do it
+    addi $s2, $s2, -1 # row -= 1
+    
+    move $a0, $s1      # column
+    move $a1, $s2      # row
+    jal get_tile_number
+    
+    bne $s3, $zero, find_up_spot
   
   addi $a0, $s1, 0 # column
   addi $a1, $s2, 1 # row
   jal update_board_at_pos
+
+  # Erase old piece position
+  move $a0, $s5
+  move $a1, $s6
+  jal update_board_at_pos
   
-  move $a1, $s2
   j update_pointer_piece
  
  check_down:
   li $t3, 's'
   bne $t2, $t3, check_left
   lw $t4, GRID_COLUMNS
+  
   addi $t4, $t4, -1
-  bge $s2, $t4, jump_to_keyboard
-  addi $s2, $s2, 1 # row += 1
+  
+  # Store old piece position
+  move $s5, $s1
+  move $s6, $s2
+  
+  find_down_spot:
+    bge $s2, $t4, jump_to_keyboard # If row goes out of bounds don't do it
+    addi $s2, $s2, 1 # row += 1
+    
+    move $a0, $s1      # column
+    move $a1, $s2      # row
+    jal get_tile_number
+    
+    bne $s3, $zero, find_down_spot
   
   addi $a0, $s1, 0 # column
   addi $a1, $s2, -1 # row
   jal update_board_at_pos
   
-  move $a1, $s2
+  # Erase old piece position
+  move $a0, $s5
+  move $a1, $s6
+  jal update_board_at_pos
+  
   j update_pointer_piece
  
  check_left:
   li $t3, 'a'
   bne $t2, $t3, check_right
-  ble $s1, $zero, jump_to_keyboard
-  addi $s1, $s1, -1 # column -= 1
+  
+  # Store old piece position
+  move $s5, $s1
+  move $s6, $s2
+  
+  find_left_spot:
+    ble $s1, $zero, jump_to_keyboard # If col goes out of bounds don't do it
+    addi $s1, $s1, -1 # col -= 1
+    
+    move $a0, $s1      # column
+    move $a1, $s2      # row
+    jal get_tile_number
+    
+    bne $s3, $zero, find_left_spot
   
   addi $a0, $s1, 1 # column
   addi $a1, $s2, 0 # row
   jal update_board_at_pos
   
-  move $a0, $s1
+  # Erase old piece position
+  move $a0, $s5
+  move $a1, $s6
+  jal update_board_at_pos
+  
   j update_pointer_piece
   
   
@@ -423,10 +473,28 @@
   lw $t4, GRID_ROWS
   addi $t4, $t4, -1
   bge $s1, $t4, jump_to_keyboard
-  addi $s1, $s1, 1 # column += 1
+  
+  # Store old piece position
+  move $s5, $s1
+  move $s6, $s2
+  
+  find_right_spot:
+    bge $s1, $t4, jump_to_keyboard # If col goes out of bounds don't do it
+    addi $s1, $s1, 1 # col += 1
+    
+    move $a0, $s1      # column
+    move $a1, $s2      # row
+    jal get_tile_number
+    
+    bne $s3, $zero, find_right_spot
   
   addi $a0, $s1, -1 # column
   addi $a1, $s2, 0 # row
+  jal update_board_at_pos
+  
+  # Erase old piece position
+  move $a0, $s5
+  move $a1, $s6
   jal update_board_at_pos
   
   li $a1, 0
