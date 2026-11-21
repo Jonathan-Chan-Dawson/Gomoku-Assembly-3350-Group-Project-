@@ -3,8 +3,8 @@ Implementing the game Gomoku in Assembly against a AI bot with the pieces repres
 Set-Up:
 
 - In MIPS, Set Up the Keyboard and Bitmap Display
-- Using Both of These Try to Run the program all te way
-- Afterwards, we'll have a fully set-up mips project an ai bot
+- Using Both of these Try to Run the program all the way
+- Afterwards, we'll have a fully set-up mips project an AI bot
 
 Build:
 
@@ -12,9 +12,9 @@ Build:
 
 Run:
 
-- Player One is Orange is the Player
-- Player Two is Navy, the Bot, and Creates Everything Step-By-Step
+- Player One is Orange
+- Player Two is Navy, the Bot, and creates everything step-by-step
 - It First Will Draw a Board
 - It will then check and upgrade grids.
-- We Then Alternate Between Turns, The Goal is hopefully 5 in a row.
-- Onc 5 In a Row, That Player Wins, and You Can Reset Everything After
+- We then alternate between turns; the Goal is hopefully 5 in a row.
+- Once 5 in a ROW. That player wins, and you can RESET everything after.
